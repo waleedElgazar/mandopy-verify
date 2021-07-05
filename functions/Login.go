@@ -21,9 +21,6 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 
 	phone := creds.Phone
 	users, found := GetUserAutho(phone)
-	SetPhoneRedis(phone)
-	SetOtpRedis(users.Otp)
-	fmt.Println(GetOtpRedis(), GetPhoneRedis())
 	if found {
 		json.NewEncoder(w).Encode(users)
 		if creds.Otp == users.Otp {

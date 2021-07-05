@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -14,10 +16,10 @@ func main() {
 	os.Setenv("DB_ROOT", "b7b41cd66ae593")
 	os.Setenv("DB_PASSWORD", "ca3b0054")
 	os.Setenv("DB_NAME", "heroku_31c814737f81a30")
-	//os.Setenv("PORT", "8081")
+	os.Setenv("PORT", "8081")
 	port := os.Getenv("PORT")
-	
-	http.HandleFunc("/", functions.Welcome)
-	http.HandleFunc("/verify", functions.Signin)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	router := mux.NewRouter()
+	router.HandleFunc("/", functions.Welcome)
+	router.HandleFunc("/verify", functions.Signin)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }

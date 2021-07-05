@@ -1,9 +1,11 @@
 package functions
 
 import (
+	"bytes"
 	"demo/db"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -24,6 +26,20 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 	if found {
 		json.NewEncoder(w).Encode(users)
 		if creds.Otp == users.Otp {
+			values := map[string]string{"name": creds.Name, "phone": phone, "otp": users.Otp}
+			json_data, err := json.Marshal(values)
+			if err != nil {
+				log.Fatal(err)
+			}
+			resp, err := http.Post("https://gp-mandoob-users.herokuapp.com/addUser", "application/json",
+				bytes.NewBuffer(json_data))
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			var res map[string]interface{}
+			json.NewDecoder(resp.Body).Decode(&res)
+			
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusAccepted)
 			json.NewEncoder(w)

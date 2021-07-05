@@ -20,6 +20,6 @@ func main() {
 	port := os.Getenv("PORT")
 	router := mux.NewRouter()
 	router.HandleFunc("/", functions.Welcome)
-	router.HandleFunc("/verify", functions.Signin)
+	router.HandleFunc("/verify", functions.Signin).Methods("GET")
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

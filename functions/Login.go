@@ -25,20 +25,17 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(users)
 		if creds.Otp == users.Otp {
 			w.Header().Set("Content-Type", "text/plain")
-			w.Write([]byte("accepted"))
 			w.WriteHeader(http.StatusAccepted)
 			json.NewEncoder(w)
 			return
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
-			w.Write([]byte("invalid credinations"))
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w)
 			return
 		}
 	} else {
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("the user ins't found"))
 		w.WriteHeader(http.StatusNotFound)
 		otp := CreateOTP()
 		auth := db.AuthoData{

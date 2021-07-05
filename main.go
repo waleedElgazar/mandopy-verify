@@ -16,6 +16,7 @@ func main() {
 	os.Setenv("DB_NAME", "heroku_31c814737f81a30")
 	//os.Setenv("PORT", "8081")
 	port := os.Getenv("PORT")
+	
 	http.HandleFunc("/", functions.Welcome)
 	http.HandleFunc("/verify", functions.Signin)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

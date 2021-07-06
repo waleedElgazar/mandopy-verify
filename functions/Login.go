@@ -23,7 +23,101 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	phone := creds.Phone
-	users, found := GetUserAutho(phone)
+	foundUser, userData := getUser(w, r, phone)
+	authData, foundAuth := GetUserAutho(phone)
+	if foundAuth && foundUser {
+		json.NewEncoder(w).Encode(userData)
+		if creds.Otp == userData.Otp {
+			w.WriteHeader(http.StatusAccepted)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	}
+
+	if foundAuth && !foundUser {
+		json.NewEncoder(w).Encode(authData)
+		if creds.Otp == authData.Otp {
+			addUser(w, r, creds.Name, authData)
+			w.WriteHeader(http.StatusAccepted)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
+
+	if !foundAuth {
+		InsertAutoData(phone)
+		authData, _ := GetUserAutho(phone)
+		json.NewEncoder(w).Encode(authData)
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	/*
+		if found {
+			json.NewEncoder(w).Encode(userData)
+			if userData.Otp == creds.Otp {
+				w.WriteHeader(http.StatusAccepted)
+			} else {
+				w.WriteHeader(http.StatusUnauthorized)
+			}
+		} else {
+			userAuthoData, found := GetUserAutho(phone)
+			if found {
+				addUser(w, r, creds.Name, userAuthoData)
+			} else {
+				fmt.Println(phone)
+				InsertAutoData(phone)
+				userAuthoData, _ = GetUserAutho(phone)
+				json.NewEncoder(w).Encode(userAuthoData)
+			}
+			w.WriteHeader(http.StatusCreated)
+		}*/
+
+}
+func Welcome(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "hello")
+}
+
+func getUser(w http.ResponseWriter, r *http.Request, phone string) (bool, db.User) {
+	url := "https://gp-mandoob-users.herokuapp.com/getUser/" + phone
+	response, err := http.Get(url)
+
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+	_, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	var user db.User
+	err = json.Unmarshal(responseData, &user)
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+	return user.Phone == phone, user
+}
+
+func addUser(w http.ResponseWriter, r *http.Request, name string, auth db.AuthoData) {
+	values := map[string]string{"name": name, "phone": auth.Phone, "otp": auth.Otp}
+	json_data, err := json.Marshal(values)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.Post("https://gp-mandoob-users.herokuapp.com/addUser", "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	var res map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&res)
+}
+
+/*
 	if found {
 		json.NewEncoder(w).Encode(users)
 		if creds.Otp == users.Otp {
@@ -59,49 +153,4 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		InsertAutoData(auth)
 		return
 	}
-
-}
-func Welcome(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "hello")
-}
-
-func getUser(w http.ResponseWriter, r *http.Request, phone string)( bool , db.User) {
-	url := "https://gp-mandoob-users.herokuapp.com/getUser/" + phone
-	response, err := http.Get(url)
-
-	if err != nil {
-		fmt.Println("error", err.Error())
-	}
-
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Println("error", err.Error())
-	}
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(body, " fd ", json.NewDecoder(response.Body))
-	var user db.User
-	err = json.Unmarshal(responseData, &user)
-	if err != nil {
-		fmt.Println("error", err.Error())
-	}
-	return user.Phone == phone ,user
-}
-
-func addUser(w http.ResponseWriter, r *http.Request, name string, auth db.AuthoData) {
-	values := map[string]string{"name": name, "phone": auth.Phone, "otp": auth.Otp}
-	json_data, err := json.Marshal(values)
-	if err != nil {
-		log.Fatal(err)
-	}
-	resp, err := http.Post("https://gp-mandoob-users.herokuapp.com/addUser", "application/json",
-		bytes.NewBuffer(json_data))
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	var res map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&res)
-}
+*/

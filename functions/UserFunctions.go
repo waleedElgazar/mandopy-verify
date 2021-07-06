@@ -22,13 +22,14 @@ func GetUserAutho(phone string) (db.AuthoData, bool) {
 	return users, true
 }
 
-func InsertAutoData(auth db.AuthoData) bool {
+func InsertAutoData(phone string) bool {
 	db := db.DBConn()
 	defer db.Close()
 	db_name := os.Getenv("DB_NAME")
+	Otp := CreateOTP()
 	in := "INSERT INTO " + db_name + ".AuthoData VALUES(?,?)"
 	insert, err := db.Prepare(in)
-	insert.Exec(auth.Phone, auth.Otp)
+	insert.Exec(phone, Otp)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -5,6 +5,7 @@ import (
 	"demo/db"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -26,27 +27,23 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 	if found {
 		json.NewEncoder(w).Encode(users)
 		if creds.Otp == users.Otp {
-			values := map[string]string{"name": creds.Name, "phone": phone, "otp": users.Otp}
-			json_data, err := json.Marshal(values)
-			if err != nil {
-				log.Fatal(err)
+			name := creds.Name
+			var userData db.User
+			UserFounded,userData:=getUser(w, r, phone)
+			if  UserFounded{
+				json.NewEncoder(w).Encode(userData)
+				w.WriteHeader(http.StatusFound)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+				addUser(w, r, name, users)
 			}
-			resp, err := http.Post("https://gp-mandoob-users.herokuapp.com/addUser", "application/json",
-				bytes.NewBuffer(json_data))
-
-			if err != nil {
-				log.Fatal(err)
-			}
-			var res map[string]interface{}
-			json.NewDecoder(resp.Body).Decode(&res)
-			
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusAccepted)
 			json.NewEncoder(w)
 			return
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w)
 			return
 		}
@@ -66,4 +63,45 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 }
 func Welcome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello")
+}
+
+func getUser(w http.ResponseWriter, r *http.Request, phone string)( bool , db.User) {
+	url := "https://gp-mandoob-users.herokuapp.com/getUser/" + phone
+	response, err := http.Get(url)
+
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(body, " fd ", json.NewDecoder(response.Body))
+	var user db.User
+	err = json.Unmarshal(responseData, &user)
+	if err != nil {
+		fmt.Println("error", err.Error())
+	}
+	return user.Phone == phone ,user
+}
+
+func addUser(w http.ResponseWriter, r *http.Request, name string, auth db.AuthoData) {
+	values := map[string]string{"name": name, "phone": auth.Phone, "otp": auth.Otp}
+	json_data, err := json.Marshal(values)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.Post("https://gp-mandoob-users.herokuapp.com/addUser", "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	var res map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&res)
 }

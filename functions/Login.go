@@ -43,13 +43,12 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}
-	if !foundAuth && creds.Otp != "" {
-		autho := db.AuthoData{
-			Otp:   creds.Otp,
-			Phone: creds.Phone,
-		}
-		InsertAutoData(autho)
-		w.WriteHeader(http.StatusCreated)
+
+	if !foundAuth {
+		InsertAutoData(phone)
+		authData, _ := GetUserAutho(phone)
+		json.NewEncoder(w).Encode(authData)
+		w.WriteHeader(http.StatusNotFound)
 	}
 
 	/*
